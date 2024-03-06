@@ -1,11 +1,11 @@
 ## Interface: 11200
 ## Title: |cffffcc00Tears|cffffffffU
-## Author: NineTears(Wind)
 ## Notes: Customize Interface UI
 ## Title-zhCN:|CFFDD66DD[界面]眼泪UI
 ## Notes-zhCN:眼泪UI设置
-## X-Repple: 界面
+## Author: NineTears(Wind)
 ## Version: 0.01
+## X-Repple: 界面
 ## Dependencies: 
 ## SavedVariablesPerCharacter: TearsUI_config, TearsUI_cache
 
