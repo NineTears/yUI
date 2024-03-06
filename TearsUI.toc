@@ -6,6 +6,7 @@
 ## Notes-zhCN:眼泪UI设置
 ## X-Repple: 界面
 ## Version: 0.01
+## Dependencies: 
 ## SavedVariablesPerCharacter: TearsUI_config, TearsUI_cache
 
 
