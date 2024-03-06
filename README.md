@@ -1,2 +1,2 @@
 # TearsUI
-眼泪UI（WoW1.12）
+眼泪界面（For WoW 1.12）
