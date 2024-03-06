@@ -17,8 +17,8 @@
 
     -- 设置frame层级
     local function TearsUI_SetFrameStrata(frame)
-        if frame and frame:GetFrameStrata() ~= "LOW" then
-            frame:SetFrameStrata("LOW")
+        if frame then
+            frame:SetFrameStrata("Low")
         end
     end
 
