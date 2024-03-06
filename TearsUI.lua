@@ -49,7 +49,7 @@
         TearsUI_SetFrameStrata(_G["MultiBarRightButton" .. i])
     end
 
-    -- 添加自动清理内存函数（登录/重载游戏后开启，每12秒执行一次）
+    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒执行一次）
     local TearsUI_collectframe = CreateFrame("Frame")
     TearsUI_collectframe:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
