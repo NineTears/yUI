@@ -49,25 +49,32 @@
         TearsUI_SetFrameStrata(_G["MultiBarRightButton" .. i])
     end
 
-    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒执行一次）
+    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒且当前使用内存达到下次清理阙值的96%时，执行Lua垃圾回收操作）
     local TearsUI_collectframe = CreateFrame("Frame")
+    local function StartMemoryManagement()
+        if X then
+            print("off")
+            X = nil
+        else
+            print("on")
+            X = function()
+                local t = GetTime()
+                local memoryUsage = gcinfo() / 1024
+                local memoryThreshold = gcinfo("count") * 0.96 / 1024 -- 下次自动清理时的最大内存的*%
+
+                if (t - T > 10) and (memoryUsage > memoryThreshold) then
+                    collectgarbage()
+                    T = t
+                end
+            end
+        end
+        TearsUI_collectframe:SetScript("OnUpdate", X)
+    end
+
     TearsUI_collectframe:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
             T, F = T or 0, F or TearsUI_collectframe
-            if X then
-                print("off")
-                X = nil
-            else
-                print("on")
-                X = function()
-                    local t = GetTime()
-                    if t - T > 10 then
-                        collectgarbage()
-                        T = t
-                    end
-                end
-            end
-            TearsUI_collectframe:SetScript("OnUpdate", X)
+            StartMemoryManagement()
         end
     end)
 
