@@ -7,7 +7,6 @@
 ## Version: 0.0.5
 ## X-Repple: 界面
 ## Dependencies: 
-## SavedVariablesPerCharacter: TearsUI_config, TearsUI_cache
-
+## SavedVariables: tearsUI_autoCleanSettings
 
 TearsUI.lua

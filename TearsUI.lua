@@ -47,15 +47,15 @@
 
 
     -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒进行一次内存检查和可能的增量垃圾回收）
-    local TearsUI_collectframe = CreateFrame("Frame")
-    TearsUI_collectframe:RegisterEvent("PLAYER_LOGIN")
-    TearsUI_collectframe:RegisterEvent("PLAYER_ENTERING_WORLD")
+    tearsUI_autoCleanSettings = {}  -- 声明全局的 SavedVariables 表
+    local tearsUI_autoCleanFrame = CreateFrame("Frame")
 
     local function performGarbageCollection()
         collectgarbage("setpause", 100)   -- 降低垃圾回收间隔
         collectgarbage("setstepmul", 400)    -- 减少每步的工作量
         local next_gc_threshold = collectgarbage("setpause") * 1024 -- 下一次自动触发垃圾回收时的最大阈值，转换为字节
         local threshold = next_gc_threshold * 0.96
+
         local function collectIfNecessary()
             local current_memory = collectgarbage("count") * 1024 -- 当前内存使用量，转换为字节
             if current_memory >= threshold then
@@ -66,16 +66,82 @@
                 end
             end
         end
-        -- 每隔10秒执行一次内存检查并进行垃圾回收
-        local timer = C_Timer.NewTicker(10, collectIfNecessary)
+
         collectIfNecessary() -- 立即进行一次内存检查和可能的增量垃圾回收
+
+        -- 每隔10秒执行一次内存检查并进行垃圾回收
+        local timer = startTimer(10, function()
+            if tearsUI_autoCleanSettings.autoclean_enabled then
+                collectIfNecessary()
+            end
+        end)
     end
 
-    TearsUI_collectframe:SetScript("OnEvent", function(self, event, ...)
-        if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
+    local function loadAutoCleanSettings()
+        -- 加载 SavedVariables
+        if tearsUI_autoCleanSettings.autoclean_enabled == nil then
+            -- 自动清理如果未设置，则默认为 true
+            tearsUI_autoCleanSettings.autoclean_enabled = true
+        end
+    end
+
+    local function saveAutoCleanSettings()
+        -- 保存设置到 SavedVariables
+        tearsUI_autoCleanSettings.autoclean_enabled = tearsUI_autoCleanSettings.autoclean_enabled
+    end
+
+    local function printAutoCleanStatus()
+        local status = tearsUI_autoCleanSettings.autoclean_enabled and "开启" or "关闭"
+        print("自动清理功能当前已" .. status)
+    end
+
+    local function setAutoCleanStatus(enabled)
+        tearsUI_autoCleanSettings.autoclean_enabled = enabled
+        saveAutoCleanSettings() -- 保存设置到 SavedVariables
+        printAutoCleanStatus()
+    end
+
+    tearsUI_autoCleanFrame:RegisterEvent("PLAYER_LOGIN")
+    tearsUI_autoCleanFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    tearsUI_autoCleanFrame:SetScript("OnEvent", function(self, event, ...)
+        if event == "PLAYER_LOGIN" then
+            loadAutoCleanSettings()
+            printAutoCleanStatus()
+
+            -- 在玩家登录后创建定时器
+            performGarbageCollection()
+        elseif event == "PLAYER_ENTERING_WORLD" then
+            printAutoCleanStatus()
+
             if not collectgarbage("isrunning") then
                 collectgarbage("start")
             end
             performGarbageCollection()
         end
     end)
+
+    -- 添加命令处理函数
+    SlashCmdList["TEARSUI"] = function(msg)
+        if msg == "cleanon" then
+            setAutoCleanStatus(true) -- 开启自动清理功能
+        elseif msg == "cleanoff" then
+            setAutoCleanStatus(false) -- 关闭自动清理功能
+        else
+            print("用法：/tearsui cleanon|cleanoff")
+        end
+    end
+    SLASH_TEARSUI1 = "/tearsui"
+
+    local function startTimer(interval, func)
+        local frame = CreateFrame("Frame")
+        frame.interval = interval
+        frame.elapsed = 0
+        frame:SetScript("OnUpdate", function(self, elapsed)
+            self.elapsed = self.elapsed + elapsed
+            if self.elapsed >= self.interval then
+                self.elapsed = 0
+                func()
+            end
+        end)
+        return frame
+    end
