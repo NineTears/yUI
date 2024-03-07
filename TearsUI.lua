@@ -1,4 +1,4 @@
-
+    -- 设置config设置
     local TearsUI_framesetting = CreateFrame("Frame")
     -- 注册事件，在插件加载完成后执行
     TearsUI_framesetting:RegisterEvent("ADDON_LOADED")
@@ -15,7 +15,8 @@
         end
     end)
 
-    -- 设置frame层级
+
+    -- 设置动作条frame层级
     local function TearsUI_SetFrameStrata(frame)
         if frame and frame:GetFrameStrata() ~= "LOW" then
             frame:SetFrameStrata("LOW")
@@ -24,19 +25,14 @@
 
     -- 设置宠物动作条的层级
     TearsUI_SetFrameStrata(PetActionBarFrame)
-
     -- 设置姿态条的层级
     TearsUI_SetFrameStrata(ShapeshiftBarFrame)
-
     -- 设置主菜单栏艺术框架的层级
     TearsUI_SetFrameStrata(MainMenuBarArtFrame)
-
     -- 设置施法条的层级
     TearsUI_SetFrameStrata(CastingBarFrame)
-
     -- 设置主菜单经验条的层级
     TearsUI_SetFrameStrata(MainMenuExpBar)
-
     -- 设置主菜单栏的层级
     TearsUI_SetFrameStrata(MainMenuBar)
 
@@ -49,34 +45,37 @@
         TearsUI_SetFrameStrata(_G["MultiBarRightButton" .. i])
     end
 
-    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒且当前使用内存达到下次清理阙值的96%时，执行Lua垃圾回收操作）
-    local TearsUI_collectframe = CreateFrame("Frame")
-    local function StartMemoryManagement()
-        if X then
-            print("off")
-            X = nil
-        else
-            print("on")
-            X = function()
-                local t = GetTime()
-                local memoryUsage = gcinfo() / 1024
-                local memoryThreshold = gcinfo("count") * 0.96 / 1024 -- 下次自动清理时的最大内存的*%
 
-                if (t - T > 10) and (memoryUsage > memoryThreshold) then
-                    collectgarbage()
-                    T = t
+    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒进行一次内存检查和可能的增量垃圾回收）
+    local TearsUI_collectframe = CreateFrame("Frame")
+    TearsUI_collectframe:RegisterEvent("PLAYER_LOGIN")
+    TearsUI_collectframe:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+    local function performGarbageCollection()
+        collectgarbage("setpause", 100)   -- 降低垃圾回收间隔
+        collectgarbage("setstepmul", 400)    -- 减少每步的工作量
+        local next_gc_threshold = collectgarbage("setpause") * 1024 -- 下一次自动触发垃圾回收时的最大阈值，转换为字节
+        local threshold = next_gc_threshold * 0.96
+        local function collectIfNecessary()
+            local current_memory = collectgarbage("count") * 1024 -- 当前内存使用量，转换为字节
+            if current_memory >= threshold then
+                -- 模拟执行增量垃圾回收
+                local steps = math.ceil((current_memory - threshold) / 1024)
+                for i = 1, steps do
+                    collectgarbage("step", 1)    -- 逐步增量回收
                 end
             end
         end
-        TearsUI_collectframe:SetScript("OnUpdate", X)
+        -- 每隔10秒执行一次内存检查并进行垃圾回收
+        local timer = C_Timer.NewTicker(10, collectIfNecessary)
+        collectIfNecessary() -- 立即进行一次内存检查和可能的增量垃圾回收
     end
 
     TearsUI_collectframe:SetScript("OnEvent", function(self, event, ...)
         if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
-            T, F = T or 0, F or TearsUI_collectframe
-            StartMemoryManagement()
+            if not collectgarbage("isrunning") then
+                collectgarbage("start")
+            end
+            performGarbageCollection()
         end
     end)
-
-    TearsUI_collectframe:RegisterEvent("PLAYER_LOGIN")
-    TearsUI_collectframe:RegisterEvent("PLAYER_ENTERING_WORLD")
