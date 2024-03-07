@@ -54,7 +54,7 @@
         collectgarbage("setpause", 100)   -- 降低垃圾回收间隔
         collectgarbage("setstepmul", 400)    -- 减少每步的工作量
         local next_gc_threshold = collectgarbage("setpause") * 1024 -- 下一次自动触发垃圾回收时的最大阈值，转换为字节
-        local threshold = next_gc_threshold * 0.96
+        local threshold = next_gc_threshold * 0.90
 
         local function collectIfNecessary()
             local current_memory = collectgarbage("count") * 1024 -- 当前内存使用量，转换为字节
@@ -62,7 +62,7 @@
                 -- 模拟执行增量垃圾回收
                 local steps = math.ceil((current_memory - threshold) / 1024)
                 for i = 1, steps do
-                    collectgarbage("step", 1)    -- 逐步增量回收
+                    collectgarbage("step", 10)    -- 逐步增量回收
                 end
             end
         end
@@ -70,7 +70,7 @@
         collectIfNecessary() -- 立即进行一次内存检查和可能的增量垃圾回收
 
         -- 每隔10秒执行一次内存检查并进行垃圾回收
-        local timer = startTimer(10, function()
+        local timer = startTimer(3, function()
             if tearsUI_autoCleanSettings.autoclean_enabled then
                 collectIfNecessary()
             end
