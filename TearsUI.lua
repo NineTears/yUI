@@ -46,18 +46,22 @@
     end
 
 
-    -- 添加自动清理内存功能（登录/重载游戏后开启，每10秒进行一次内存检查和可能的增量垃圾回收）
+    -- 添加自动清理内存功能（登录/重载游戏后，每隔*秒执行一次内存检查和可能的增量垃圾回收）
     tearsUI_autoCleanSettings = {}  -- 声明全局的 SavedVariables 表
     local tearsUI_autoCleanFrame = CreateFrame("Frame")
 
+    local memkb, gckb = gcinfo()   -- 返回当前Lua虚拟机的内存使用情况
+    local memmb = memkb and memkb > 0   -- 当前内存使用量
+    local gcmb = gckb and gckb > 0    -- Lua垃圾回收的内存使用量
+
     local function performGarbageCollection()
-        collectgarbage("setpause", 100)   -- 降低垃圾回收间隔
-        collectgarbage("setstepmul", 400)    -- 减少每步的工作量
-        local next_gc_threshold = collectgarbage("setpause") * 1024 -- 下一次自动触发垃圾回收时的最大阈值，转换为字节
+        collectgarbage("setpause", 100)   -- 垃圾回收间隔，默认值200，单位是百分之一秒
+        collectgarbage("setstepmul", 1000)    -- 每步的工作量，默认值200
+        local next_gc_threshold = gcmb * 1024   -- 把Lua垃圾回收的内存使用量转换为字节
         local threshold = next_gc_threshold * 0.90
 
         local function collectIfNecessary()
-            local current_memory = collectgarbage("count") * 1024 -- 当前内存使用量，转换为字节
+            local current_memory = memmb * 1024   -- 把当前内存使用量转换为字节
             if current_memory >= threshold then
                 -- 模拟执行增量垃圾回收
                 local steps = math.ceil((current_memory - threshold) / 1024)
@@ -69,7 +73,7 @@
 
         collectIfNecessary() -- 立即进行一次内存检查和可能的增量垃圾回收
 
-        -- 每隔10秒执行一次内存检查并进行垃圾回收
+        -- 每隔*秒执行一次内存检查和可能的增量垃圾回收
         local timer = startTimer(3, function()
             if tearsUI_autoCleanSettings.autoclean_enabled then
                 collectIfNecessary()
@@ -122,9 +126,10 @@
 
     -- 添加命令处理函数
     SlashCmdList["TEARSUI"] = function(msg)
-        if msg == "cleanon" then
+        local command = string.lower(msg)
+        if command == "cleanon" then
             setAutoCleanStatus(true) -- 开启自动清理功能
-        elseif msg == "cleanoff" then
+        elseif command == "cleanoff" then
             setAutoCleanStatus(false) -- 关闭自动清理功能
         else
             print("用法：/tearsui cleanon|cleanoff")
