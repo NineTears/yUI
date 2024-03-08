@@ -135,7 +135,7 @@
             print("用法：/tearsui cleanon|cleanoff")
         end
     end
-    SLASH_TEARSUI1 = "/zUI"
+    SLASH_TEARSUI1 = "/tearsui"
 
     local function startTimer(interval, func)
         local frame = CreateFrame("Frame")
