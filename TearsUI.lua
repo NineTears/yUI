@@ -98,8 +98,9 @@
         printAutoCleanStatus()
     end
 
-    local elapsed = 0
-    local interval = 1 -- 间隔时间，单位为秒
+    -- 计时器
+    local elapsed = 0   -- 初始化
+    local interval = 1  -- 间隔时间，单位为秒
     local function startTimer()
         elapsed = elapsed + arg1
         if elapsed >= interval then
@@ -124,17 +125,3 @@
         end
     end
     SLASH_TEARSUI1 = "/tearsui"
-
-    local function startTimer(interval, func)
-        local frame = CreateFrame("Frame")
-        frame.interval = interval
-        frame.elapsed = 0
-        frame:SetScript("OnUpdate", function(self, elapsed)
-            self.elapsed = self.elapsed + elapsed
-            if self.elapsed >= self.interval then
-                self.elapsed = 0
-                func()
-            end
-        end)
-        return frame
-    end
