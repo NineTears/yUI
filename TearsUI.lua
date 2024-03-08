@@ -52,21 +52,21 @@
 
     local memkb, gckb = gcinfo()   -- 返回当前Lua虚拟机的内存使用情况
     local memmb = memkb and memkb > 0   -- 当前内存使用量
-    local gcmb = gckb and gckb > 0    -- Lua垃圾回收的内存使用量
+    local gcmb = gckb and gckb > 0    -- Lua垃圾回收的总内存使用量
 
     local function performGarbageCollection()
         collectgarbage("setpause", 100)   -- 垃圾回收间隔，默认值200，单位是百分之一秒
-        collectgarbage("setstepmul", 1000)    -- 每步的工作量，默认值200
-        local next_gc_threshold = gcmb * 1024   -- 把Lua垃圾回收的内存使用量转换为字节
+        collectgarbage("setstepmul", 500)    -- 每步的工作量，默认值200
+        local next_gc_threshold = gcmb * 1024   -- 把Lua垃圾回收的总内存使用量转换为字节
         local threshold = next_gc_threshold * 0.90
 
         local function collectIfNecessary()
             local current_memory = memmb * 1024   -- 把当前内存使用量转换为字节
             if current_memory >= threshold then
                 -- 模拟执行增量垃圾回收
-                local steps = math.ceil((current_memory - threshold) / 1024)
+                local steps = math.ceil((next_gc_threshold - threshold) / 1024)
                 for i = 1, steps do
-                    collectgarbage("step", 10)    -- 逐步增量回收
+                    collectgarbage("step", 1)    -- 逐步增量回收
                 end
             end
         end
@@ -135,7 +135,7 @@
             print("用法：/tearsui cleanon|cleanoff")
         end
     end
-    SLASH_TEARSUI1 = "/tearsui"
+    SLASH_TEARSUI1 = "/zUI"
 
     local function startTimer(interval, func)
         local frame = CreateFrame("Frame")
