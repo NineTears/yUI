@@ -51,12 +51,12 @@
     local tearsUI_autoCleanFrame = CreateFrame("Frame")
 
     local memkb, gckb = gcinfo()   -- 返回当前Lua虚拟机的内存使用情况
-    local memmb = memkb and memkb > 0   -- 当前内存使用量
-    local gcmb = gckb and gckb > 0    -- Lua垃圾回收的总内存使用量
+    local memmb = memkb and memkb > 0 and memkb or 0   -- 当前内存使用量
+    local gcmb = gckb and gckb > 0 and gckb or 0    -- Lua垃圾回收的总内存使用量
 
     local function performGarbageCollection()
-        collectgarbage("setpause", 100)   -- 垃圾回收间隔，默认值200，单位是百分之一秒
-        collectgarbage("setstepmul", 500)    -- 每步的工作量，默认值200
+        -- collectgarbage("setpause", 100)   -- 垃圾回收间隔，默认值200，单位是百分之一秒
+        -- collectgarbage("setstepmul", 500)    -- 每步的工作量，默认值200
         local next_gc_threshold = gcmb * 1024   -- 把Lua垃圾回收的总内存使用量转换为字节
         local threshold = next_gc_threshold * 0.90
 
@@ -66,19 +66,12 @@
                 -- 模拟执行增量垃圾回收
                 local steps = math.ceil((next_gc_threshold - threshold) / 1024)
                 for i = 1, steps do
-                    collectgarbage("step", 1)    -- 逐步增量回收
+                    collectgarbage("step", 3)    -- 逐步增量回收
                 end
             end
         end
 
         collectIfNecessary() -- 立即进行一次内存检查和可能的增量垃圾回收
-
-        -- 每隔*秒执行一次内存检查和可能的增量垃圾回收
-        local timer = startTimer(3, function()
-            if tearsUI_autoCleanSettings.autoclean_enabled then
-                collectIfNecessary()
-            end
-        end)
     end
 
     local function loadAutoCleanSettings()
@@ -105,23 +98,18 @@
         printAutoCleanStatus()
     end
 
-    tearsUI_autoCleanFrame:RegisterEvent("PLAYER_LOGIN")
-    tearsUI_autoCleanFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    tearsUI_autoCleanFrame:SetScript("OnEvent", function(self, event, ...)
-        if event == "PLAYER_LOGIN" then
-            loadAutoCleanSettings()
-            printAutoCleanStatus()
-
-            -- 在玩家登录后创建定时器
+    local elapsed = 0
+    local interval = 1 -- 间隔时间，单位为秒
+    local function startTimer()
+        elapsed = elapsed + arg1
+        if elapsed >= interval then
             performGarbageCollection()
-        elseif event == "PLAYER_ENTERING_WORLD" then
-            printAutoCleanStatus()
-
-            if not collectgarbage("isrunning") then
-                collectgarbage("start")
-            end
-            performGarbageCollection()
+            elapsed = 0
         end
+    end
+
+    tearsUI_autoCleanFrame:SetScript("OnUpdate", function(self, elapsed)
+        startTimer()
     end)
 
     -- 添加命令处理函数
